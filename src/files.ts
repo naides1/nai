@@ -1,5 +1,6 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export const isTauri = "__TAURI_INTERNALS__" in window;
 export type FileRef = { name: string; path?: string; handle?: any };
@@ -33,4 +34,9 @@ export async function saveTxt(text: string, ref: FileRef | null): Promise<FileRe
   await w.write(text);
   await w.close();
   return { name: handle.name, handle };
+}
+
+export async function exitApp() {
+  if (isTauri) await getCurrentWindow().close();
+  else window.close();
 }
