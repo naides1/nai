@@ -92,8 +92,8 @@ export default function App() {
       if (navOpen) { if (k === "escape") { e.preventDefault(); setNavOpen(false); } return; }
       if (!mod) { if (error) setError(""); return; }
 
+      // Typography: applies to the selection, or to the next typed characters when nothing is selected
       const step = e.altKey ? 0 : k === "<" || e.code === "Comma" ? -1 : k === ">" || e.code === "Period" ? 1 : 0;
-      const sel = !!ed && !ed.state.selection.empty; // is any text highlighted?
       if (k === "w") { e.preventDefault(); closeActiveTab(); }
       else if (k === "s") {
         const { id, text, doc, file } = active;
@@ -101,11 +101,11 @@ export default function App() {
       } else if (k === "o") {
         try { const r = await openTxt(); if (r) openInTab(r.text, r.ref, r.doc); setError(""); } catch (err) { report(err); }
       } else if (k === "n") addTab("", null);
-      else if (step) { e.preventDefault(); if (sel) applySize(clamp(sizeOf(ed!) + step)); }
-      else if (e.shiftKey && k === "f") { e.preventDefault(); if (sel) setSizeOpen(sizeOf(ed!)); }
+      else if (step) { e.preventDefault(); if (ed) applySize(clamp(sizeOf(ed) + step)); }
+      else if (e.shiftKey && k === "f") { e.preventDefault(); if (ed) setSizeOpen(sizeOf(ed)); }
       else if (!e.altKey && (k === "b" || k === "i" || k === "u" || (e.shiftKey && k === "x"))) {
         e.preventDefault();
-        if (sel) { const c = ed!.chain().focus(); (k === "b" ? c.toggleBold() : k === "i" ? c.toggleItalic() : k === "u" ? c.toggleUnderline() : c.toggleStrike()).run(); }
+        if (ed) { const c = ed.chain().focus(); (k === "b" ? c.toggleBold() : k === "i" ? c.toggleItalic() : k === "u" ? c.toggleUnderline() : c.toggleStrike()).run(); }
       }
     }
     const onKeyUp = (e: KeyboardEvent) => { const k = e.key.toLowerCase(); if (k === "z" || k === "control" || k === "meta") zHeld.current = false; };
