@@ -2,6 +2,8 @@
 
 This is a minimalist notepad application that heavily encourages the use of keyboard navigation.
 
+###Note: Windows may show a "Windows protected your PC" screen, Click More info, then Run anyway.
+
 ## About nai
 
 Nai is inspired by keyboard-driven text editors. It is a minimalistic notepad application. 
