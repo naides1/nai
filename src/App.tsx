@@ -14,20 +14,21 @@ const clamp = (n: number) => Math.min(MAX_PT, Math.max(MIN_PT, n));
 const blank = (id: number): Tab => ({ id, doc: emptyDoc, text: "", file: null, rev: 0 });
 
 export default function App() {
-  const [tabs, setTabs] = useState<Tab[]>([blank(1)]);
-  const [activeId, setActiveId] = useState(1);
+  const [tabs, setTabs] = useState<Tab[]>([]); // no tabs = welcome screen
+  const [activeId, setActiveId] = useState<number | null>(null);
   const [navOpen, setNavOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [sizeOpen, setSizeOpen] = useState<number | null>(null); // current size, shown as the placeholder
   const [closing, setClosing] = useState(false);
   const [error, setError] = useState("");
   const editorRef = useRef<TipEditor | null>(null);
-  const nextId = useRef(2);
+  const nextId = useRef(1);
   const sels = useRef<Record<number, Sel>>({});
   const zHeld = useRef(false);
   const zSnap = useRef<TipEditor["state"]["doc"] | null>(null);
   const closingRef = useRef(false);
-  const active = tabs.find((t) => t.id === activeId)!;
+  const active = tabs.find((t) => t.id === activeId);
+  const title = active ? (active.file?.name ?? "untitled") : "";
   const locked = navOpen || helpOpen;
 
   const updateTab = (id: number, patch: Partial<Tab>) => setTabs((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
@@ -42,9 +43,10 @@ export default function App() {
   }
 
   function openInTab(text: string, file: FileRef, doc?: JSONContent | null) {
-    if (active.text !== "" || active.file) return addTab(text, file, doc); // reuse the current tab only if it is blank
-    delete sels.current[active.id];
-    setTabs((ts) => ts.map((t) => (t.id === active.id ? { ...t, doc: doc ?? fromText(text), text, file, rev: t.rev + 1 } : t)));
+    if (!active || active.text !== "" || active.file) return addTab(text, file, doc); // reuse the current tab only if it is blank
+    const id = active.id;
+    delete sels.current[id];
+    setTabs((ts) => ts.map((t) => (t.id === id ? { ...t, doc: doc ?? fromText(text), text, file, rev: t.rev + 1 } : t)));
   }
 
   function goTo(n: number) {
@@ -53,7 +55,7 @@ export default function App() {
   }
 
   function closeActiveTab() {
-    if (closingRef.current) return;
+    if (closingRef.current || activeId === null) return;
     closingRef.current = true;
     setClosing(true);
     const id = activeId, snapshot = tabs;
@@ -66,6 +68,8 @@ export default function App() {
       setClosing(false);
     }, FADE_MS);
   }
+
+  useEffect(() => { document.title = title || "nai"; }, [title]);
 
   useEffect(() => {
     async function onKeyDown(e: KeyboardEvent) {
@@ -86,7 +90,7 @@ export default function App() {
         return;
       }
       if (helpOpen) { if (k === "escape") { e.preventDefault(); setHelpOpen(false); } return; }
-      if (e.ctrlKey && (k === "tab" || k === " ")) { e.preventDefault(); setNavOpen((o) => !o); return; }
+      if (e.ctrlKey && (k === "tab" || k === " ")) { e.preventDefault(); if (tabs.length) setNavOpen((o) => !o); return; }
       const digit = e.shiftKey || e.getModifierState("AltGraph") ? undefined : /^(?:Digit|Numpad)([1-9])$/.exec(e.code)?.[1];
       if (digit && (mod || e.altKey || navOpen)) { e.preventDefault(); goTo(Number(digit)); return; }
       if (navOpen) { if (k === "escape") { e.preventDefault(); setNavOpen(false); } return; }
@@ -96,6 +100,7 @@ export default function App() {
       const step = e.altKey ? 0 : k === "<" || e.code === "Comma" ? -1 : k === ">" || e.code === "Period" ? 1 : 0;
       if (k === "w") { e.preventDefault(); closeActiveTab(); }
       else if (k === "s") {
+        if (!active) return;
         const { id, text, doc, file } = active;
         try { const r = await saveTxt(text, doc, file); if (r) updateTab(id, { file: r.ref }); setError(r?.warn ?? ""); } catch (err) { report(err); }
       } else if (k === "o") {
@@ -122,6 +127,8 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className="titlebar"><span>{title}</span></div>
+
       <nav className={`tabs ${navOpen ? "open" : ""}`} aria-hidden={!navOpen}>
         <ul>
           {tabs.map((t, i) => (
@@ -133,16 +140,23 @@ export default function App() {
         </ul>
       </nav>
 
-      <Editor
-        key={`${activeId}-${active.rev}`}
-        doc={active.doc}
-        sel={sels.current[activeId]}
-        frozen={locked || sizeOpen !== null}
-        closing={closing}
-        onChange={(doc, text) => updateTab(activeId, { doc, text })}
-        onSel={(s) => { sels.current[activeId] = s; }}
-        onEditor={(e) => { editorRef.current = e; }}
-      />
+      {active ? (
+        <Editor
+          key={`${active.id}-${active.rev}`}
+          doc={active.doc}
+          sel={sels.current[active.id]}
+          frozen={locked || sizeOpen !== null}
+          closing={closing}
+          onChange={(doc, text) => updateTab(active.id, { doc, text })}
+          onSel={(s) => { sels.current[active.id] = s; }}
+          onEditor={(e) => { editorRef.current = e; }}
+        />
+      ) : (
+        <div className="welcome">
+          <p><span className="k">ctrl + n</span>, for new file</p>
+          <p><span className="k">ctrl + o</span>, to open a file</p>
+        </div>
+      )}
 
       <div className={`help ${helpOpen ? "open" : ""}`} aria-hidden={!helpOpen}>
         <div className="help-inner">
@@ -160,6 +174,7 @@ export default function App() {
 
       {sizeOpen !== null && <SizeBox current={sizeOpen} onDone={(n) => { setSizeOpen(null); if (n) applySize(n); }} />}
       {error && <div className="err">{error}</div>}
+      <div className="drag" data-tauri-drag-region />
     </div>
   );
 }

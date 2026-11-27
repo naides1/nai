@@ -5,6 +5,16 @@ html,body,#root{height:100%;margin:0;background:var(--bg);overflow:hidden}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
 @keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 
+/* title bar: blends into the background; the transparent .drag layer on top is what you grab */
+.titlebar{position:absolute;top:0;left:0;right:0;height:32px;z-index:1;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--muted);font:12px var(--mono);pointer-events:none}
+.titlebar span{max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drag{position:absolute;top:0;left:0;right:0;height:32px;z-index:7}
+
+/* welcome screen */
+.welcome{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font:300 15px/1.8 var(--mono);animation:fade-in .25s ease}
+.welcome p{margin:0}
+.welcome .k{color:var(--fg);font-weight:400}
+
 /* editor */
 .editor{height:100%;overflow-y:auto;scrollbar-width:none;transition:opacity .15s ease;animation:fade-in .18s ease}
 .editor::-webkit-scrollbar{display:none}
