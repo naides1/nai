@@ -2,7 +2,7 @@
 
 This is a minimalist notepad application that heavily encourages the use of keyboard navigation.
 
-###Note: Windows may show a "Windows protected your PC" screen, Click More info, then Run anyway.
+### Note: Windows may show a "Windows protected your PC" screen, Click More info, then Run anyway.
 
 ## About nai
 
